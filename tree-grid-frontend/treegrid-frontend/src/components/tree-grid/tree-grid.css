@@ -1,0 +1,20 @@
+.container {
+  padding: 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+th, td {
+  text-align: left;
+  vertical-align: middle;
+}
+
+.btn {
+  font-size: 0.7rem;
+  margin-left: 6px;
+  padding: 2px 6px;
+}

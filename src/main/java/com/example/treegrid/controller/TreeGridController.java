@@ -1,9 +1,9 @@
 package com.example.treegrid.controller;
 
+import com.example.treegrid.dto.NodeDto;
 import com.example.treegrid.model.Node;
 import com.example.treegrid.service.TreeService;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,5 +19,10 @@ public class TreeGridController {
     @GetMapping("/api/tree")
     public List<Node> getTreeData() {
         return treeService.getTree();
+    }
+
+    @PostMapping("/api/tree/add")
+    public void addNode(@RequestBody NodeDto nodeDto) {
+        treeService.addNode(nodeDto);
     }
 }
