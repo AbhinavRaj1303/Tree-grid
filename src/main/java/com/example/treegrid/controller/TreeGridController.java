@@ -23,6 +23,13 @@ public class TreeGridController {
 
     @PostMapping("/api/tree/add")
     public void addNode(@RequestBody NodeDto nodeDto) {
+        System.out.println("📥 Received POST /api/tree/add:");
+        System.out.println("  name = " + nodeDto.getName());
+        System.out.println("  parentId = " + nodeDto.getParentId());
+        System.out.println("  siblingId = " + nodeDto.getSiblingId());
+        System.out.println("  position = " + nodeDto.getPosition());
+        System.out.println("  level = " + nodeDto.getLevel());
+
         treeService.addNode(nodeDto);
     }
 }

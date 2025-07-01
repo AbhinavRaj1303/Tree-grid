@@ -1,20 +1,27 @@
-.container {
-  padding: 1rem;
-  font-family: system-ui, sans-serif;
+:host {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 15px;
+  display: block;
 }
 
 table {
   width: 100%;
+  border-collapse: collapse;
   table-layout: fixed;
 }
 
-th, td {
-  text-align: left;
+table th,
+table td {
+  border: 1px solid #dee2e6;
   vertical-align: middle;
+  padding: 8px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.btn {
-  font-size: 0.7rem;
-  margin-left: 6px;
-  padding: 2px 6px;
+.btn-group-sm .btn {
+  font-size: 13px;
+  padding: 4px 10px;
 }
