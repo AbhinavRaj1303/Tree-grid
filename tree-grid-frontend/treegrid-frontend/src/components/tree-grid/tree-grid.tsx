@@ -32,12 +32,12 @@ export class TreeGrid {
     const newNode = {
       name,
       level: type === 'child' ? targetNode.level + 1 : targetNode.level,
-      parentId: type === 'child' ? targetNode.id : targetNode.parentId,
+      parentId: type === 'child' ? targetNode.id : parentNode?.id ?? null,
       siblingId: type === 'child' ? null : targetNode.id,
       position: type === 'child' ? null : type
     };
 
-    console.log("📤 Sending node data to backend:", JSON.stringify(newNode));
+    console.log('📤 Sending node data to backend:', JSON.stringify(newNode));
 
     try {
       const response = await fetch('http://localhost:8080/api/tree/add', {
@@ -47,19 +47,42 @@ export class TreeGrid {
       });
 
       if (!response.ok) {
-        throw new Error(`Server responded with status ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText}`);
       }
 
       await this.loadData();
 
-      const expandId = type === 'child' ? targetNode.id : targetNode.parentId;
-      this.expandedMap = {
-        ...this.expandedMap,
-        [expandId]: true
-      };
+      const expandId = newNode.parentId;
+      if (expandId) {
+        this.expandedMap = {
+          ...this.expandedMap,
+          [expandId]: true
+        };
+      }
     } catch (error) {
       console.error('Failed to add node:', error);
-      alert('Failed to add node. See console for details.');
+      alert(`Failed to add node: ${(error as Error).message}`);
+    }
+  }
+
+  async handleDelete(node: any) {
+    if (!confirm(`Are you sure you want to delete '${node.name}'?`)) return;
+
+    try {
+      const response = await fetch(`http://localhost:8080/api/tree/delete/${node.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Error ${response.status}: ${errorText}`);
+      }
+
+      await this.loadData();
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert(`Delete failed: ${(error as Error).message}`);
     }
   }
 
@@ -70,12 +93,12 @@ export class TreeGrid {
 
       return [
         <tr>
-          <td style={{ paddingLeft: `${level * 24}px` }}>
-            <span style={{ display: 'inline-block', width: '16px' }}>
+          <td style={{ paddingLeft: `${level * 24}px`, whiteSpace: 'nowrap' }}>
+            <span style={{ display: 'inline-block', width: '12px' }}>
               {hasChildren ? (isExpanded ? '▾' : '▸') : ''}
             </span>
             <span
-              style={{ cursor: hasChildren ? 'pointer' : 'default', marginLeft: hasChildren ? '5px' : '21px' }}
+              style={{ cursor: hasChildren ? 'pointer' : 'default', marginRight: '5px' }}
               onClick={() => hasChildren && this.toggleExpand(node.id)}
             >
               {node.name}
@@ -85,8 +108,9 @@ export class TreeGrid {
           <td>
             <div class="btn-group btn-group-sm">
               <button class="btn btn-outline-primary" onClick={() => this.handleAdd('child', node)}>+ Child</button>
-              <button class="btn btn-outline-success" onClick={() => this.handleAdd('above', parent, node)}>↑ Above</button>
-              <button class="btn btn-outline-warning" onClick={() => this.handleAdd('below', parent, node)}>↓ Below</button>
+              <button class="btn btn-outline-success" onClick={() => this.handleAdd('above', node, parent)}>↑ Above</button>
+              <button class="btn btn-outline-warning" onClick={() => this.handleAdd('below', node, parent)}>↓ Below</button>
+              <button class="btn btn-outline-danger" onClick={() => this.handleDelete(node)}>🗑 Delete</button>
             </div>
           </td>
         </tr>,
@@ -97,10 +121,10 @@ export class TreeGrid {
 
   render() {
     return (
-      <div style={{ width: '100vw', padding: '20px' }}>
+      <div class="container-fluid mt-5 px-4">
         <h2 class="mb-4 text-primary">Dynamic Tree Grid</h2>
         <div class="table-responsive">
-          <table class="table table-bordered table-hover align-middle">
+          <table class="table table-bordered table-hover align-middle w-100">
             <thead class="table-light">
               <tr>
                 <th>Node Name</th>

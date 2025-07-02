@@ -3,9 +3,11 @@ package com.example.treegrid.controller;
 import com.example.treegrid.dto.NodeDto;
 import com.example.treegrid.model.Node;
 import com.example.treegrid.service.TreeService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestController
 public class TreeGridController {
@@ -22,14 +24,26 @@ public class TreeGridController {
     }
 
     @PostMapping("/api/tree/add")
-    public void addNode(@RequestBody NodeDto nodeDto) {
-        System.out.println("📥 Received POST /api/tree/add:");
-        System.out.println("  name = " + nodeDto.getName());
-        System.out.println("  parentId = " + nodeDto.getParentId());
-        System.out.println("  siblingId = " + nodeDto.getSiblingId());
-        System.out.println("  position = " + nodeDto.getPosition());
-        System.out.println("  level = " + nodeDto.getLevel());
+    public ResponseEntity<?> addNode(@RequestBody NodeDto nodeDto) {
+        try {
+            treeService.addNode(nodeDto);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Unexpected error: " + e.getMessage());
+        }
+    }
 
-        treeService.addNode(nodeDto);
+    @DeleteMapping("/api/tree/delete/{id}")
+    public ResponseEntity<?> deleteNode(@PathVariable String id) {
+        try {
+            treeService.deleteNode(id);
+            return ResponseEntity.ok().build();
+        } catch (IllegalStateException | NoSuchElementException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Unexpected error: " + e.getMessage());
+        }
     }
 }

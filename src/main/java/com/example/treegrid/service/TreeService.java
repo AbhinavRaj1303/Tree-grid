@@ -8,4 +8,5 @@ import java.util.List;
 public interface TreeService {
     List<Node> getTree();
     void addNode(NodeDto nodeDto);
+    void deleteNode(String nodeId);
 }

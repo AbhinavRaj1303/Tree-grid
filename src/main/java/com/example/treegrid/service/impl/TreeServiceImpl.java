@@ -52,12 +52,14 @@ public class TreeServiceImpl implements TreeService {
         String parentId = nodeDto.getParentId();
 
         if (parentId == null) {
-            // Adding to root level
             siblings = treeData;
         } else {
             Node parent = findNodeById(treeData, parentId);
             if (parent == null) {
-                throw new RuntimeException("Parent not found: " + parentId);
+                throw new IllegalArgumentException("Parent not found: " + parentId);
+            }
+            if (parent.getName().equalsIgnoreCase(nodeDto.getName())) {
+                throw new IllegalArgumentException("Child name cannot be the same as parent name.");
             }
             if (parent.getChildren() == null) {
                 parent.setChildren(new ArrayList<>());
@@ -65,8 +67,14 @@ public class TreeServiceImpl implements TreeService {
             siblings = parent.getChildren();
         }
 
-        int insertIndex = siblings.size();
+        // Check for duplicate sibling name
+        for (Node sibling : siblings) {
+            if (sibling.getName().equalsIgnoreCase(nodeDto.getName())) {
+                throw new IllegalArgumentException("Sibling with name '" + nodeDto.getName() + "' already exists.");
+            }
+        }
 
+        int insertIndex = siblings.size();
         if (nodeDto.getSiblingId() != null && nodeDto.getPosition() != null) {
             for (int i = 0; i < siblings.size(); i++) {
                 if (siblings.get(i).getId().equals(nodeDto.getSiblingId())) {
@@ -76,7 +84,6 @@ public class TreeServiceImpl implements TreeService {
             }
         }
 
-        // Generate new ID based on sibling index
         String newId = (parentId == null ? "" : parentId + ".") + (insertIndex + 1);
 
         Node newNode = new Node();
@@ -88,12 +95,12 @@ public class TreeServiceImpl implements TreeService {
 
         siblings.add(insertIndex, newNode);
 
-        // Reassign IDs to maintain proper order
         for (int i = 0; i < siblings.size(); i++) {
             Node sibling = siblings.get(i);
             sibling.setId((parentId == null ? "" : parentId + ".") + (i + 1));
         }
     }
+
 
     private Node findNodeById(List<Node> nodes, String id) {
         for (Node node : nodes) {
@@ -104,5 +111,50 @@ public class TreeServiceImpl implements TreeService {
             }
         }
         return null;
+    }
+
+    @Override
+    public void deleteNode(String nodeId) {
+        if (treeData.size() <= 1 && treeData.get(0).getId().equals(nodeId)) {
+            throw new IllegalStateException("Cannot delete the last remaining root node.");
+        }
+        boolean deleted = deleteAndReindex(treeData, null, nodeId);
+        if (!deleted) {
+            throw new NoSuchElementException("Node not found: " + nodeId);
+        }
+    }
+
+    private boolean deleteAndReindex(List<Node> nodes, Node parent, String targetId) {
+        for (int i = 0; i < nodes.size(); i++) {
+            Node current = nodes.get(i);
+            if (current.getId().equals(targetId)) {
+                nodes.remove(i);
+                reindexSiblings(nodes, parent != null ? parent.getId() : null);
+                return true;
+            } else if (current.getChildren() != null) {
+                boolean deleted = deleteAndReindex(current.getChildren(), current, targetId);
+                if (deleted) return true;
+            }
+        }
+        return false;
+    }
+
+    private void reindexSiblings(List<Node> siblings, String parentId) {
+        for (int i = 0; i < siblings.size(); i++) {
+            Node sibling = siblings.get(i);
+            String newId = (parentId == null ? "" : parentId + ".") + (i + 1);
+            updateNodeIds(sibling, newId);
+        }
+    }
+
+    private void updateNodeIds(Node node, String newIdPrefix) {
+        node.setId(newIdPrefix);
+        if (node.getChildren() != null) {
+            for (int i = 0; i < node.getChildren().size(); i++) {
+                Node child = node.getChildren().get(i);
+                updateNodeIds(child, newIdPrefix + "." + (i + 1));
+                child.setParentId(newIdPrefix);
+            }
+        }
     }
 }
